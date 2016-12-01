@@ -118,7 +118,8 @@ class Smash_Media_Custom_User_Profile {
 		 * side of the site.
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-smash-media-custom-user-profile-public.php';
-
+                require_once 'startup_inc.php';
+                require_once SMASH_PROFILE_CLASSES_PATH_APP.'localconfig.php';
 		$this->loader = new Smash_Media_Custom_User_Profile_Loader();
 
 	}
@@ -148,13 +149,22 @@ class Smash_Media_Custom_User_Profile {
 	 * @access   private
 	 */
 	private function define_admin_hooks() {
-
-		$plugin_admin = new Smash_Media_Custom_User_Profile_Admin( $this->get_plugin_name(), $this->get_version() );
+                 $g_Classes = array('\custom_profile\Subscription');
+		$plugin_admin = new Smash_Media_Custom_User_Profile_Admin($this->get_plugin_name(),$this->get_version() );
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-
-	}
+                  $this->loader->add_action( 'admin_menu',$plugin_admin,'create_top_level_menu');
+             foreach ($g_Classes as $currClass) {
+            if (class_exists($currClass)) {
+                
+            }
+            $classInstance = new $currClass(NULL, NULL);
+            if ($classInstance instanceof \smash\IWp) {
+                $classInstance->addHooks($this->loader);
+            }
+        }
+    }
 
 	/**
 	 * Register all of the hooks related to the public-facing functionality

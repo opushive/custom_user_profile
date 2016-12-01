@@ -15,7 +15,7 @@
  * @wordpress-plugin
  * Plugin Name:       Custom User Profile
  * Plugin URI:        http://www.opushive.com
- * Description:       This is a short description of what the plugin does. It's displayed in the WordPress admin area.
+ * Description:       This Plugin helps manage subscriber subscriptions AND other profile details
  * Version:           1.0.0
  * Author:            Tosin Omotayo
  * Author URI:        http://www.opushive.com
@@ -35,8 +35,12 @@ if ( ! defined( 'WPINC' ) ) {
  * This action is documented in includes/class-smash-media-custom-user-profile-activator.php
  */
 function activate_smash_media_custom_user_profile() {
+   if(!is_plugin_active( 'smash-media-sms-mgr/smash-media-sms-mgr.php' ) and current_user_can( 'activate_plugins' ) ) {
+     wp_die('Sorry, but this plugin requires the Smash Media Sms Manager plugin to be installed and active. <br><a href="' . admin_url( 'plugins.php' ) . '">&laquo; Return to Plugins</a>');  
+   }
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-smash-media-custom-user-profile-activator.php';
 	Smash_Media_Custom_User_Profile_Activator::activate();
+        Smash_Media_Custom_User_Profile_Activator::upgrade();
 }
 
 /**
@@ -73,3 +77,22 @@ function run_smash_media_custom_user_profile() {
 
 }
 run_smash_media_custom_user_profile();
+
+function smash_media_custom_user_profile_callback($buffer){
+	return $buffer;
+}
+function smash_media_custom_user_profile_add_ob_start(){
+	ob_start("smash_media_custom_user_profile_callback");
+}
+function smash_media_custom_user_profile_flush_ob_end(){
+	ob_end_flush();
+}
+function smash_media_custom_user_profile_upgrade_check(){
+    require_once plugin_dir_path( __FILE__ ) . 'includes/class-smash-media-custom-user-profile-activator.php';
+    Smash_Media_Custom_User_Profile_Activator::upgrade();
+
+}
+
+add_action('init', 'smash_media_custom_user_profile_add_ob_start');
+add_action('wp_footer', 'smash_media_custom_user_profile_flush_ob_end');
+add_action('init', 'smash_media_custom_user_profile_upgrade_check');

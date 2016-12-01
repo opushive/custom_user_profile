@@ -99,5 +99,14 @@ class Smash_Media_Custom_User_Profile_Admin {
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/smash-media-custom-user-profile-admin.js', array( 'jquery' ), $this->version, false );
 
 	}
+       public function create_top_level_menu() {
+//        add_menu_page("Subscriber Management", "Subscriber Management", "activate_plugins", "subscriber-management", array('Subscriber', "render_subscriber"), "dashicons-id-alt", 9);
+        add_menu_page("Smash Media", "Smash Media", "activate_plugins", "smash-media-sms", array('\smash\Message', "render_messages"), "dashicons-admin-comments", 12);
+    } 
+     public function get_plugin_name() {
+        return $this->plugin_name;
+    }
+    
+
 
 }
