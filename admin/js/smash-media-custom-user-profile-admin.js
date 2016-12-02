@@ -28,8 +28,8 @@
 	 * Although scripts in the WordPress core, Plugins and Themes may be
 	 * practising this, we should strive to set a better example in our own work.
 	 */
-
-      $("#author_id").change(function(){
+ $(document).ready(function () {
+      $("#author_Id").change(function(){
         var authorId =  $(this).val();
         if(!authorId){
           authorId = 0;
@@ -41,9 +41,23 @@
 
 		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
 		jQuery.post(ajaxurl, data, function(response) {
-			alert('Got this from the server: ' + response);
+                    
+                    response = JSON.parse(response);
+		if(response.length == 0){
+                    $("#category_Id").html("<option>Categories not available</option>");
+                    return false;
+                }
+                var option = "<option>Select Categories</option>";
+                    
+                $.each(response,function(_index,currValue){
+                    option += "<option value='"+currValue.cat_ID+"'>"+currValue.name+"</option>";
+                });
+                  $("#category_Id").html(option);
+                    return false;
 		});
-      });
+      }); 
+ });
+    
 
 
 })( jQuery );

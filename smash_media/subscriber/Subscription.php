@@ -17,7 +17,8 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
     protected $wp_user_Id;
     protected $author_Id;
     protected $category_Id;
-     
+    private static $message = "";
+    private static $notice = "";
     
     public function __construct($_id, $_fieldlist = NULL, $_createOnDb = false) {
 
@@ -77,8 +78,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
         $item = $this->initialize_subscription_if_id($default);
         add_meta_box('subscription_meta_box', 'Subscription', array($this, 'add_subscription_meta_box'), 'subscription', 'normal', 'default');  
          if (isset($_REQUEST['nonce']) && wp_verify_nonce($_REQUEST['nonce'], basename(__FILE__))) {
-             var_dump($_REQUEST);
-             EXIT();
+            
             $item = shortcode_atts($default, $_REQUEST);
              $this->handle_create();
              $this->handle_update();
@@ -144,10 +144,62 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
     }
     
     public function  handle_update(){
-        
+        if(isset($_REQUEST['susbscription_Id'])){
+         $item = array();
+         $item['subscriber_Id'] = $_REQUEST['subscriber_Id'];
+         $item['category_Id'] = $_REQUEST['category_Id'] != '' ? $_REQUEST['category_Id'] : 0;
+         $item['author_Id'] = $_REQUEST['author_Id'] != '' ? $_REQUEST['author_Id'] : 0;
+         
+         $subscriber =  \smash\Subscriber::_get(NULL,'susbscriber_Id = '.(int)$item['subscriber_Id']);
+         $foundSubscriber = $subscriber[0];
+         $item['wp_user_Id'] = $subscriber[0]->wp_user_Id;
+         
+         $susbcription_alraedy_exist = Subscription::_get(NULL,'author_Id = '.$item['author_Id'].
+                                       " AND category_Id = ".$item['category_Id'] ." AND subscriber_Id = ".$item['subscriber_Id']);
+         if(\smash\Utilities::isValidDbObj($susbcription_alraedy_exist)){
+              self::$notice = "Subscription already exist";
+              return $item;
+         }
+         $updateSubscription = new Subscription((int)$_REQUEST['susbscription_Id'],NULL);
+         $updateSubscription->setAuthor_Id($item['author_Id']);
+         $updateSubscription->setCategory_Id($item['category_Id']);
+          $updateSubscription->setSubscriber_Id( $item['subscriber_Id']);
+          $updateSubscription->setWp_user_Id( $item['wp_user_Id']);
+         $result = $updateSubscription->update($item);
+         if($result === FALSE){
+              self::$notice = "Error updating subscription";
+              return $item;
+         }
+         self::$message = "Subscription Successfully created";
+          return true;
+        }
     }
     public function handle_create(){
-        
+        if(!isset($_REQUEST['susbscription_Id'])){
+         $item = array();
+         $item['subscriber_Id'] = $_REQUEST['subscriber_Id'];
+         $item['category_Id'] = $_REQUEST['category_Id'] != '' ? $_REQUEST['category_Id'] : 0;
+         $item['author_Id'] = $_REQUEST['author_Id'] != '' ? $_REQUEST['author_Id'] : 0;
+         
+         $subscriber =  \smash\Subscriber::_get(NULL,'susbscriber_Id = '.(int)$item['subscriber_Id']);
+         $foundSubscriber = $subscriber[0];
+         $item['wp_user_Id'] = $subscriber[0]->wp_user_Id;
+         
+         $susbcription_alraedy_exist = Subscription::_get(NULL,'author_Id = '.$item['author_Id'].
+                                       " AND category_Id = ".$item['category_Id'] ." AND subscriber_Id = ".$item['subscriber_Id']);
+         if(\smash\Utilities::isValidDbObj($susbcription_alraedy_exist)){
+              self::$notice = "Subscription already exist";
+              return $item;
+         }
+         $createSubscription = new Subscription(NULL,NULL);
+         $result = $createSubscription->create($item);
+         if(!$result){
+              self::$notice = "Subscription already exist";
+              return $item;
+         }
+         self::$message = "Subscription Successfully created";
+          return true;
+        }
     }
     
     public function handle_delete(){
@@ -155,8 +207,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
     }
     public function addHooks($_parent) {
         $_parent->add_action('admin_menu', $this, 'add_menu_item');
-
-         
+        $_parent->add_action('wp_ajax_get_author_categories',$this,'getAuthorsCategories');
     }
     public function add_menu_item(){
         //add_menu_page('Subscriber', 'Subscriber', 'activate_plugins', 'subscriber_list', array($this, 'render_subscriber'));
@@ -164,7 +215,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
         add_submenu_page('smash-media-sms', __('New Subscription'), __('New Subscription'), 'activate_plugins', 'smash_subscription_form', array($this, 'render_crud_view'));
     }
       public function initialize_subscription_if_id(array $default_subscriber) {
-        if (isset($_GET['subscriber_Id'])) {
+        if (isset($_GET['subscription_Id'])) {
             $active_subscription = new Subscription(intval($_GET['subscription_Id']), NULL, false);
             $found_subscription = (array)$active_subscription->get(NULL, 0, 'subscription_Id = ' . intval($_GET['subscription_Id']));
 
@@ -214,7 +265,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
      ?>
         <option value="">Select Status</option>
         <?php
-        var_dump($_data);
+       
         foreach ($_data as $activeData):
             $selected = $activeData->subscriber_Id === trim($_value) ? "selected" : null;
             ?>
@@ -223,7 +274,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
         endforeach;  
    }
    public function generateAuthorDropdown($_data,$_value){
-       var_dump($_data);
+     
      ?>
         <option value="">Select Status</option>
         <?php
@@ -243,14 +294,14 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
    public function getAuthorsCategories(){
        global $wpdb;
        $author_id = 0;
-       if(isset($_REQUEST['author_id'])){
-          $author_id =  $_REQUEST['author_id'];
+       if(isset($_REQUEST['author_Id'])){
+          $author_id =  $_REQUEST['author_Id'];
        }
        if($author_id == 0){
-           return json_encode(get_categories());
+           die(json_encode(get_categories()));
        }
         $author_categories = $wpdb->get_results("
-        SELECT DISTINCT(terms.term_id) as ID, terms.name, terms.slug
+        SELECT DISTINCT(terms.term_id) as cat_ID, terms.name, terms.slug
         FROM $wpdb->posts as posts
         LEFT JOIN $wpdb->term_relationships as relationships ON posts.ID = relationships.object_ID
         LEFT JOIN $wpdb->term_taxonomy as tax ON relationships.term_taxonomy_id = tax.term_taxonomy_id
@@ -261,7 +312,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
             tax.taxonomy = 'category' )
         ORDER BY terms.name ASC
        ");
-        return json_encode($author_categories);
+        die(json_encode($author_categories));
    }
 
 
