@@ -1,6 +1,6 @@
 <?php
 
-namespace smash_custom_profile;
+namespace custom_profile;
 
 //include_once plugin_dir_path(dirname(__FILE__)) . 'util/interfaces/IDb.php';
 
@@ -82,7 +82,11 @@ class ADb implements IDb {
     protected static function _table() {
         global $wpdb;
         $tablename = ADb::$prefix . strtolower(get_called_class());
-        return smash_strip_interface($wpdb->prefix . $tablename,'smash');
+        var_dump(strtolower(get_called_class()));
+        var_dump($wpdb->prefix . $tablename);
+        var_dump(smash_strip_interface($wpdb->prefix . $tablename,'wp_smash_custom_profile'));
+        exit();
+        return smash_strip_interface($wpdb->prefix . $tablename,'wp_smash_custom_profile');
     }
 
     static function time_to_date($time) {

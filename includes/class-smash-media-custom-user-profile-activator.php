@@ -36,11 +36,13 @@ class Smash_Media_Custom_User_Profile_Activator {
           $class_folders = array('account','common','messaging','subscriber');
                 foreach($class_folders as $currFolder){
                    foreach(glob(WP_PLUGIN_DIR.'/'.$bootstrap->get_plugin_name().'/smash_media/'.$currFolder.'/*.*') as $file) {
+                       echo "<h1>".$file."</h1>";
                   $file =  basename($file,".php");
-                  $class =  '\\smashprofile\\'. $file;
+                  echo "<h1>{$file}</h1>";
+                  $class =  '\\custom_profile\\'. $file;
                   if(class_exists( $class)){
                   $classInstance = new $class(NULL,NULL,NULL);
-                  if($classInstance instanceof \smashprofile\IWp){
+                  if($classInstance instanceof \smashprofile\IWp || $classInstance instanceof \smash\IWp){
                    $classInstance->createTable();
                   }
                   }
@@ -60,6 +62,7 @@ class Smash_Media_Custom_User_Profile_Activator {
         if(!$current_pugin_version){
             add_option( $smash_media_custom_profile->get_plugin_name(), $smash_media_custom_profile->get_version());
         }else if ($current_pugin_version !=  $smash_media_custom_profile->get_version()){
+            echo "<h1>updating ".$current_pugin_version."</h1>";
             self::activate();
             update_option($smash_media_custom_profile->get_plugin_name(),$smash_media_custom_profile->get_version());
         }

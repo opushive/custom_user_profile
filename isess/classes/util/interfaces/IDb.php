@@ -1,5 +1,5 @@
 <?php
-namespace smash_custom_profile;
+namespace custom_profile;
 
 if (!interface_exists("IDb")) {
 

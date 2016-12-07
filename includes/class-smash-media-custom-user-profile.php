@@ -69,7 +69,7 @@ class Smash_Media_Custom_User_Profile {
 	public function __construct() {
 
 		$this->plugin_name = 'smash-media-custom-user-profile';
-		$this->version = '1.0.0';
+		$this->version = '1.0.1';
 
 		$this->load_dependencies();
 		$this->set_locale();
