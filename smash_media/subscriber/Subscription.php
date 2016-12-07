@@ -257,6 +257,10 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
     public function addHooks($_parent) {
         $_parent->add_action('admin_menu', $this, 'add_menu_item');
         $_parent->add_action('wp_ajax_get_author_categories',$this,'getAuthorsCategories');
+        //this hook manages user subscription via ajax
+         $_parent->add_action('wp_ajax_subscribe_user',$this,'subscribe_user_ajax');
+          //this hook manages user unsubscription via ajax
+          $_parent->add_action('wp_ajax_unsubscribe_user',$this,'unsubscribe_user_ajax');
         $_parent->add_filter('smash_table_filter',$this,'filter_table_name');
         
     }
@@ -345,7 +349,18 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
    public static function uninstallTable($_aArgList = NULL) {
         
     }
-    
+   public function subscribe_user_ajax(){
+       if(isset($_REQUEST['subscribe_user'])){
+           
+       }
+   }
+   
+   public function unsubscribe_user_ajax(){
+     if(isset($_REQUEST['unsubscribe_user'])){
+           
+       }  
+   }
+
    public function getAuthorsCategories(){
        global $wpdb;
        $author_id = 0;
