@@ -60,13 +60,8 @@ function smash_custom_profile_autoloader($class)
         require_once (SMASH_PROFILE_CLASSES_PATH_ISESS.'util/'.$class.'.php');
         return true;
     }
-    
     if (file_exists(SMASH_PROFILE_CLASSES_PATH_ISESS.'util/'.smash_custom_profile_strip_interface($class,'custom_profile').'.php')) {
         require_once (SMASH_PROFILE_CLASSES_PATH_ISESS.'util/'.smash_custom_profile_strip_interface($class,'custom_profile').'.php');
-        return true;
-    }
-     if (file_exists(SMASH_PROFILE_CLASSES_PATH_ISESS.'util/'.smash_custom_profile_strip_interface($class,'isess').'.php')) {
-        require_once (SMASH_PROFILE_CLASSES_PATH_ISESS.'util/'.smash_custom_profile_strip_interface($class,'isess').'.php');
         return true;
     }
     if (file_exists(SMASH_PROFILE_CLASSES_PATH_3RDPARTY.$class.'.php')) {
@@ -171,7 +166,6 @@ function smash_custom_profile_autoloader($class)
         require_once (SMASH_PROFILE_APP_BASE_DIR.'/api/v1/'.$class.'.php');
         return true;
     }
-    
 //    else{
 //        echo $class."<br>";
 //        echo CLASSES_PATH_SMASH_PROFILE_MEDIA_SUBSCRIBER.smash_custom_profile_strip_interface($class,'custom_profile').'.php';

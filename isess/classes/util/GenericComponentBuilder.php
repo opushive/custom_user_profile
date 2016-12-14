@@ -1,6 +1,6 @@
 <?php
 
-namespace smash;
+namespace isess;
 
 /**
  * Description of GenericComponentBuilder

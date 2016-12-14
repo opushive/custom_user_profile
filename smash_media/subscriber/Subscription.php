@@ -64,7 +64,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
         $this->category_Id = $category_Id;
     }
     
-    public function render_subscriptions(){
+    public static function render_subscriptions(){
        $subscription = new \Subscription_List_Table();
 
         if ('delete' ===  $subscription->current_action()) {
@@ -266,8 +266,8 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
     }
     public function add_menu_item(){
         //add_menu_page('Subscriber', 'Subscriber', 'activate_plugins', 'subscriber_list', array($this, 'render_subscriber'));
-        add_submenu_page('smash-media-sms', __('Subscription List'), __('Subscription List'), 'activate_plugins', 'smash_subscription_list_table', array($this, 'render_subscriptions'));
-        add_submenu_page('smash-media-sms', __('New Subscription'), __('New Subscription'), 'activate_plugins', 'smash_subscription_form', array($this, 'render_crud_view'));
+        add_submenu_page('custom-user-profile', __('Subscription List'), __('Subscription List'), 'activate_plugins', 'smash_subscription_list_table', array($this, 'render_subscriptions'));
+        add_submenu_page('custom-user-profile', __('New Subscription'), __('New Subscription'), 'activate_plugins', 'smash_subscription_form', array($this, 'render_crud_view'));
     }
       public function initialize_subscription_if_id(array $default_subscriber) {
         if (isset($_GET['subscription_Id'])) {
@@ -300,7 +300,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
           author_Id INT(11) NOT NULL,
           category_Id INT(11) NOT NULL,
           PRIMARY KEY  (subscription_Id)
-        ) $charset_collate;";
+        );";
            
         require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
         dbDelta($sql);
