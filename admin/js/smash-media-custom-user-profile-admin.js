@@ -29,6 +29,9 @@
 	 * practising this, we should strive to set a better example in our own work.
 	 */
  $(document).ready(function () {
+      function reverseBase64AndParseJson(_val) {
+            return  JSON.parse(atob(_val));
+        }
       $("#author_Id").change(function(){
         var authorId =  $(this).val();
         if(!authorId){
@@ -55,9 +58,41 @@
                   $("#category_Id").html(option);
                     return false;
 		});
-      }); 
+      });
+      
+        $("#subscriber_author_Id").change(function(){
+           if(!$(this).val()){
+               return false;
+           };
+           
+           var authorObject = reverseBase64AndParseJson($("#subscriber_author_Id option:selected").attr("attr"));
+           var list = "";
+          if(authorObject.categories.length == 0){
+              return;
+          }
+          $.each(authorObject.categories,function(_index){
+             list += "<option value='"+authorObject.author.ID+"'>"+authorObject.categories[_index].name+"</option>"; 
+          });
+          $("#authors categories").html(list);
+           
+//            $.each(event, function (currIndex) {
+//                var newEventObject = {name: eventName, paramObject: event[currIndex], paramName: _.keys(event[currIndex])[0]}; 
+//                    eventsParams.push(newEventObject);
+//            });
+//            var newDivElement = "";
+//           _.each(eventsParams,function(_activeEvent){
+//             var rowClass = "class" + Math.floor((Math.random() * 1000) + 1);
+//              newDivElement += "<div class='row field " + rowClass + "'>";
+//            newDivElement += "<div class='col-sm-5'><input class='form-control' value='" + _activeEvent.name + "::" + _activeEvent.paramName + "' readonly></div>";
+//            newDivElement += "<div class='col-sm-5'><input class='form-control' name='event_parameters"  + "[" + _activeEvent.name + "::" + _activeEvent.paramName  + "]" + "' value='' ></div>";
+//            newDivElement += "<div class='col-sm-2'><button type='button' containerClassName='" + rowClass + "' class='btn field-remove-btn btn-small btn-danger'>&nbsp; - &nbsp;</button></div>";
+//            newDivElement += "</div>"; 
+//           });
+//            $("#appended_event_parameters").html(newDivElement).hide().fadeIn("slow");
+           
+         });
  });
-    
+   
 
 
 })( jQuery );

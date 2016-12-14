@@ -21,7 +21,7 @@
  * @author     Tosin Omotayo <tosin@okasho.org>
  */
 class Smash_Media_Custom_User_Profile_Public {
-
+       public $_parent;
 	/**
 	 * The ID of this plugin.
 	 *
@@ -51,9 +51,12 @@ class Smash_Media_Custom_User_Profile_Public {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-
+                  $this->register_shortcodes();
 	}
-
+        public function add_hooks($_parent) {
+              $this->_parent = $_parent;
+             
+          }
 	/**
 	 * Register the stylesheets for the public-facing side of the site.
 	 *
@@ -99,5 +102,23 @@ class Smash_Media_Custom_User_Profile_Public {
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/smash-media-custom-user-profile-public.js', array( 'jquery' ), $this->version, false );
 
 	}
+        
+        
+        public function register_shortcodes(){
+       // [get-cateogries]
+         add_shortcode('get-cateogries', array($this,'get_categories'));
+         add_shortcode('display-authors', array($this,'getAuthors'));
+//        add_shortcode('search-and-compare', array($this,'create_angular_search_and_compare_component'));
+    
+        }
+        
+        public function get_categories(){
+            $all_categories = \custom_profile\Subscription::getCategories(false);
+           // var_dump($all_categories);
+        }
+        
+        public function getAuthors(){
+            var_dump(\custom_profile\Subscription::getAuthorsAndCategories(0));
+        }
 
 }

@@ -113,6 +113,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
         
         return 'wp_smash_custom_profile';
     }
+    
     public function render_crud_view(){
         $default  = array(
         'subscription_Id' => 0,
@@ -168,17 +169,77 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
         </div>
  <?php
     }
+    public function render_subscriber_subscription_crud(){
+        $default  = array(
+        'subscription_Id' => 0,
+        'subscriber_Id' => 0,
+        'wp_user_Id' => 0,
+        'author_Id' => 0,
+        'category_Id' => 0
+        );
+        $item = $this->initialize_subscription_if_id($default);
+        
+        add_meta_box('subscriber_meta_box', 'Subscription', array($this, 'add_subscriber_meta_box'), 'subscriber_box', 'normal', 'default');  
+         if (isset($_REQUEST['nonce']) && wp_verify_nonce($_REQUEST['nonce'], basename(__FILE__))) {
+            
+            $item = shortcode_atts($default, $_REQUEST);
+             $this->handle_create();
+             $this->handle_update();
+        }
+        ?>
+         <div class="wrap">
+            <div class="icon32 icon32-posts-post" id="icon-edit"><br></div>
+            <h2><?php _e('Subscriptions') ?> <a class="add-new-h2"
+                                             href="<?php
+                                             echo get_admin_url(get_current_blog_id(), 'admin.php?page=smash_subscriber_list_table');
+                                             ?>"><?php _e('Back to list') ?></a>
+            </h2>
+            <?php if (!empty(self::$notice)): ?>
+                <div id="notice" class="error"><p><?php echo self::$notice ?></p></div>
+            <?php endif; ?>
+            <?php if (!empty(self::$message)): ?>
+                <div id="message" class="updated"><p><?php echo self::$message ?></p></div>
+                <?php endif; ?>
+            <form id="form" method="POST" enctype="multipart/form-data">
+                <?php
+                if (isset($_POST['subscription_Id'])) {
+                    _e('<a class="add-new-h2" href="' . $_SERVER['REQUEST_URI'] . '">Reset Form</a>');
+                }
+                ?>
+                <input type="hidden" name="nonce" value="<?php echo wp_create_nonce(basename(__FILE__)) ?>"/>
+
+                
+
+                <div class="metabox-holder" id="poststuff">
+                    <div id="post-body">
+                        <div id="post-body-content">
+                            <?php /* And here we call our custom meta box */ ?>
+        <?php do_meta_boxes('subscriber_box', 'normal', $item); ?>
+                            <input type="submit" value="<?php isset($_GET['subscription_Id']) ? _e('Update') : _e('Save') ?>" id="submit" class="button-primary" name="submit">
+
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+ <?php
+    }
     
     public function add_subscription_meta_box($item){
        
-        $all_subscribers = \smash\Subscriber::_get(NULL,null);
+       $currentUser = get_current_user();
+       $current_categories = array();
+      
         ?>
    
         <table cellspacing="2" cellpadding="5" style="width: 100%;" class="form-table">
             <tbody>
              <?php 
+             
            _e(\isess\GenericComponentBuilder::getRow("Subscriber", "dropdown", $item['subscriber_Id'], "subscriber_Id", "subscriber_Id", array('data' => $all_subscribers, 'class' => 'service-tokenizer', 'callback' => array($this, 'generateSubscriberDropdown'))));
             ?>
+             
+          
              <?php 
            _e(\isess\GenericComponentBuilder::getRow("Author", "dropdown", $item['author_Id'], "author_Id", "author_Id", array('data' => get_users(array('who'=>'authors')), 'class' => 'service-tokenizer', 'callback' => array($this, 'generateAuthorDropdown'))));
             ?>
@@ -188,6 +249,52 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
                 
         </tbody>
         </table> 
+       <?php
+    }
+    
+    public function add_subscriber_meta_box($item){
+       
+         $currentUser = get_current_user();
+         $current_categories = array();
+       $current_authors = array();
+        ?>
+   
+        <table cellspacing="2" cellpadding="5" style="width: 100%;" class="form-table">
+            <tbody>
+                 
+            
+          <?php     _e(\isess\GenericComponentBuilder::getRow("Categories", "tagbox", $current_categories, "categories[]", null, array('data' => self::getCategories(0), 'class' => 'events service-tokenizer', 'callback' => array($this, 'generateCategoriesTagbox')))); ?>
+           
+            
+            </tbody>
+            
+            <tbody class="hidden">
+             <?php 
+       //   _e(\isess\GenericComponentBuilder::getRow("Categories", "dropdown", $item['category_Id'], "category_Id", "category_Id", array('data' => get_categories(), 'class' => 'service-tokenizer', 'callback' => array($this, 'generateCategoryDropdown'))));
+            ?>
+            </tbody>   
+        </tbody>
+        </table> 
+        <table cellspacing="2" cellpadding="5" style="width: 100%;" class="form-table">
+            <tbody>
+                <tr>
+                    <td>
+                     <?php  //_e(\isess\GenericComponentBuilder::getRow("Authors", 
+                //              "tagbox",   $current_authors, "authors[]", null, array('data' => self::getAuthorsAndCategories(0), 'class' => 'events service-tokenizer', 'callback' => array($this, 'generateSubscriberAuthorTagBox')))); ?>
+            <?php 
+            _e(\isess\GenericComponentBuilder::getRow("Author", "dropdown", $item['author_Id'], "author_Id", "subscriber_author_Id", array('data' => self::getAuthorsAndCategories(0), 'class' => 'service-tokenizer', 'callback' => array($this, 'generateSubscriberAuthorDropdown'))));
+            ?>
+                  
+                    </td>
+                    <td>
+                        <?php  _e(\isess\GenericComponentBuilder::getRow("Authors Categories", 
+                             "tagbox", array(), "author_categories[]", null, array('data' => array(), 'class' => 'events service-tokenizer', 'callback' => function(){}))); ?>  
+                        
+                    </td>
+                </tr>
+
+              </tbody>
+        </table>
        <?php
     }
     
@@ -268,6 +375,9 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
         //add_menu_page('Subscriber', 'Subscriber', 'activate_plugins', 'subscriber_list', array($this, 'render_subscriber'));
         add_submenu_page('custom-user-profile', __('Subscription List'), __('Subscription List'), 'activate_plugins', 'smash_subscription_list_table', array($this, 'render_subscriptions'));
         add_submenu_page('custom-user-profile', __('New Subscription'), __('New Subscription'), 'activate_plugins', 'smash_subscription_form', array($this, 'render_crud_view'));
+       //  add_submenu_page('profile.php','User Subscription', __('User Subscription'), 'read','user_subscription_page', array($this, 'render_crud_view'));
+         add_users_page( "User Subscription Page","User Subscription",'read','user_subscription', array($this, 'render_subscriber_subscription_crud'));
+         
     }
       public function initialize_subscription_if_id(array $default_subscriber) {
         if (isset($_GET['subscription_Id'])) {
@@ -345,6 +455,20 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
             <?php
         endforeach;  
    }  
+   public function generateSubscriberAuthorDropdown($_data,$_value){
+      
+       
+     ?>
+        <option value="">Select Author</option>
+        <?php
+        
+        foreach ($_data as $activeData):
+            $selected = $activeData['author']->ID == trim($_value) ? "selected" : null;
+            ?>
+            <option attr="<?php _e(base64_encode(json_encode($activeData))) ?>" value="<?php _e($activeData['author']->ID) ?>"  <?php _e($selected) ?>><?php _e( $activeData['author']->display_name) ?></option>
+            <?php
+        endforeach;  
+   }  
    
    public static function uninstallTable($_aArgList = NULL) {
         
@@ -360,10 +484,18 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
            
        }  
    }
+   
+   public static function getCategories($_isAjax= 1){
+       if(!$_isAjax){
+           return get_categories();
+        
+       }
+       die(json_encode(get_categories()));
+   }
 
-   public function getAuthorsCategories(){
+   public static function getAuthorsCategories($author_id = 0,$_isAjax = true){
        global $wpdb;
-       $author_id = 0;
+       
        if(isset($_REQUEST['author_Id'])){
           $author_id =  $_REQUEST['author_Id'];
        }
@@ -382,7 +514,26 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
             tax.taxonomy = 'category' )
         ORDER BY terms.name ASC
        ");
+        if($_isAjax){
         die(json_encode($author_categories));
+        }
+        return $author_categories;
+   }
+   public static function getAuthorsAndCategories($_isAjax= 1){
+       global $wpdb;
+       $authors =  get_users(array('who'=>'authors'));
+  
+       $allAuthorsAndCategories = array();
+       foreach ($authors as $currentAuthor){
+         $allAuthorsAndCategories[] = array('author'=>$currentAuthor,
+             'categories'=>self::getAuthorsCategories($currentAuthor->ID,false));  
+       }
+       
+      if($_isAjax){
+         die($allAuthorsAndCategories); 
+      }
+      return $allAuthorsAndCategories;
+      
    }
    
    public function filter_table_name($_table){
@@ -394,6 +545,62 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
        $result = Subscription::_delete("subscription_Id = " .$ID);
                 return $result;
    }
+ 
+   public function generateCategoriesTagbox($_data, $_value=array()) {
+     
+        
+        $categories_Id = array();
+        foreach ($_value as $thisData) {
+           $categories_Id[] = $thisData->term_id;
+        }
+        ?>
+        <option value="" disabled="true">Select Categories</option>
+        <?php
+        foreach ($_data as $activeData):
 
+            $selected = in_array($activeData->term_id,  $categories_Id) ? 'selected' : '';
+            ?>
+            <option attr="<?php _e(base64_encode(json_encode($activeData))) ?>" value="<?php _e($activeData->term_id) ?>" <?php _e($selected) ?>><?php _e($activeData->name) ?></option>
+            <?php
+        endforeach;
+   
+   }
+   public function generateSubscriberAuthorTagBox($_data, $_value=array()){
+       
+        $authors_Id = array();
+        foreach ($_value as $thisData) {
+           $authors_Id[] = $thisData->term_id;
+        }
+        ?>
+        <option value="" disabled="true">Select Categories</option>
+        <?php
+        foreach ($_data as $activeData):
+
+            $selected = in_array($activeData['author']->ID,  $authors_Id) ? 'selected' : '';
+            ?>
+            <option attr="<?php _e(base64_encode(json_encode($activeData))) ?>" value="<?php _e($activeData['author']->ID) ?>" <?php _e($selected) ?> > <?php _e($activeData['author']->display_name) ?></option>
+            <?php
+        endforeach;
+   }
+   public function generateAuthorTagbox($_data, $_value=array()) {
+     
+        
+        $authors_Id = array();
+        foreach ($_value as $currAuthor) {
+           $authors_Id[] = $currAuthor->ID;
+        }
+        ?>
+        <option value="" disabled="true">Select Author</option>
+        <?php
+        foreach ($_data as $activeData):
+
+            $selected = in_array($activeData['author']->ID,  $authors_Id) ? 'selected' : '';
+            ?>
+            <option  attr="<?php _e(base64_encode(json_encode($activeData['categories']))) ?>" value="<?php _e($activeData->term_id) ?>" <?php _e($selected) ?>><?php _e($activeData->name) ?></option>
+            <?php
+        endforeach;
+   
+   }
+   
 
 }
