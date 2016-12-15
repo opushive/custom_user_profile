@@ -183,8 +183,8 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
          if (isset($_REQUEST['nonce']) && wp_verify_nonce($_REQUEST['nonce'], basename(__FILE__))) {
             
             $item = shortcode_atts($default, $_REQUEST);
-             $this->handle_create();
-             $this->handle_update();
+             $this->handle_subscriber_create();
+             $this->handle_subscriber_update();
         }
         ?>
          <div class="wrap">
@@ -275,7 +275,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
             </tbody>   
         </tbody>
         </table> 
-        <table cellspacing="2" cellpadding="5" style="width: 100%;" class="form-table">
+        <table style="width: 100%;" class="form-table">
             <tbody>
                 <tr>
                     <td>
@@ -286,19 +286,77 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
             ?>
                   
                     </td>
-                    <td>
-                        <?php  _e(\isess\GenericComponentBuilder::getRow("Authors Categories", 
-                             "tagbox", array(), "author_categories[]", null, array('data' => array(), 'class' => 'events service-tokenizer', 'callback' => function(){}))); ?>  
-                        
-                    </td>
-                </tr>
-
+            <tbody id="author-categories-container" class="hidden"> 
+                 <tr class="form-field">
+            <th valign="top" scope="row">
+                <label for="">Selected Author Categories</label>
+            </th>
+            <td id="authors_categories">
+                <input type="checkbox" class="author-categories" attr="4|2|author[action]">author[action]&nbsp;&nbsp;&nbsp;
+                <input type="checkbox" class="author-categories" attr="4|2|author[action]">author[action]&nbsp;&nbsp;&nbsp;
+                <input type="checkbox" class="author-categories" attr="4|2|author[action]">author[action]&nbsp;&nbsp;&nbsp;
+                <input type="checkbox" class="author-categories" attr="4|2|author[action]">author[action]&nbsp;&nbsp;&nbsp;
+            </td>
+                 </tr>
+<!--                <tr><td>
+                    
+                    </td><td></td></tr>
+                <tr><td><input type="checkbox" class="author-categories" attr="4|2|author[action]"</td></tr>
+                 <tr><td><input type="checkbox" class="author-categories" attr="4|2|author[action]"</td></tr>
+                  <tr><td><input type="checkbox" class="author-categories" attr="4|2|author[action]"</td></tr>
+                 <tr><td><input type="checkbox" class="author-categories" attr="4|2|author[action]"</td></tr>
+                 </td>  
+                   
+                </tr>-->
+               
+              </tbody>
+              <tbody>
+                  
+            <?php 
+            _e(\isess\GenericComponentBuilder::getRow("Selected Categories", 
+                      "tagbox",   array() , "authorscategories[]", "selected-categories", array('data' => array(), 'class' => 'selected_categories service-tokenizer', 'callback' => function(){
+                
+                      }))); 
+            ?>
+                 
+                  
               </tbody>
         </table>
        <?php
     }
     
     public function  handle_update(){
+        global $wpdb;
+        if(isset($_REQUEST['subscription_Id'])){
+         $item = array();
+         $item['subscriber_Id'] = $_REQUEST['subscriber_Id'];
+         $item['category_Id'] = $_REQUEST['category_Id'] != '' ? $_REQUEST['category_Id'] : 0;
+         $item['author_Id'] = $_REQUEST['author_Id'] != '' ? $_REQUEST['author_Id'] : 0;
+         
+         $subscriber =  \smash\Subscriber::_get(NULL,'subscriber_Id = '.(int)$item['subscriber_Id']);
+         $foundSubscriber = $subscriber[0];
+         $item['wp_user_Id'] = $subscriber[0]->wp_user_Id;
+         
+         $susbcription_already_exist = Subscription::_get(NULL,'author_Id = '.$item['author_Id'].
+                                       " AND category_Id = ".$item['category_Id'] ." AND subscriber_Id = ".$item['subscriber_Id']);
+         $susbcription_already_exist = $wpdb->get_results('SELECT * FROM wp_smash_subscription WHERE author_Id = '.$item['author_Id'].
+                                       " AND category_Id = ".$item['category_Id'] ." AND subscriber_Id = ".$item['subscriber_Id']);
+         if( $susbcription_already_exist != NULL || (is_array($susbcription_already_exist) && count($susbcription_already_exist) != 0)){
+              self::$notice = "Subscription already exist";
+              return $item;
+         }
+           $result  = Subscription::_update($item,array("subscription_Id"=>(int)$_REQUEST['subscription_Id']));
+         
+        
+         if($result === FALSE){
+              self::$notice = "Error updating subscription";
+              return $item;
+         }
+         self::$message = "Subscription Successfully created";
+          return true;
+        }
+    }
+    public function  handle_subscriber_update(){
         global $wpdb;
         if(isset($_REQUEST['subscription_Id'])){
          $item = array();
@@ -357,6 +415,43 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
           return true;
         }
     }
+    public function handle_subscriber_create(){
+         global $wpdb;
+        if(!isset($_REQUEST['subscription_Id'])){
+         $item = array();
+         $currentSubscriber = get_current_user_id();
+         
+          $subscriber =  \smash\Subscriber::_get(NULL,'wp_user_id = '. $currentSubscriber);
+          if(!\Utilities::isValidDatabaseReturn($subscriber)){
+              self::$notice = "Subscriber does does not yet exist";
+              return $item; 
+          };
+          //create category subcription
+          foreach ($_REQUEST['categories'] as $currentCategory){
+              $susbcription_alraedy_exist = self::_get(NULL,'author_Id = 0'.
+                                       " AND category_Id = ".$currentCategory ." AND subscriber_Id = ". $subscriber[0]->subscriber_Id);  
+            if(!\Utilities::isValidDatabaseReturn($susbcription_alraedy_exist)){
+               $createSubscription = new Subscription(NULL,NULL);
+            $result = $createSubscription->create(array('category_Id'=>$currentCategory,'author_Id'=>0,'wp_user_Id'=>$currentSubscriber,'subscriber_Id'=>$subscriber[0]->subscriber_Id)); 
+            }
+          }
+          
+          foreach($_REQUEST['authorscategories'] as $currentAuthorCategory){
+               $thisCurrentAuthorCategory = explode("|", $currentAuthorCategory);
+                $susbcription_alraedy_exist = self::_get(NULL,'author_Id = '.$thisCurrentAuthorCategory[0].
+                                       " AND category_Id = ".$thisCurrentAuthorCategory[1] ." AND subscriber_Id = ". $subscriber[0]->subscriber_Id); 
+                
+              if(!\Utilities::isValidDatabaseReturn( $susbcription_alraedy_exist)){
+               $createSubscription = new Subscription(NULL,NULL);
+            $result = $createSubscription->create(array('category_Id'=>$thisCurrentAuthorCategory[1],'author_Id'=>$thisCurrentAuthorCategory[0],'wp_user_Id'=>$currentSubscriber,'subscriber_Id'=>$subscriber[0]->subscriber_Id)); 
+            }
+          }
+
+        
+         self::$message = "Subscription Successfully created";
+          return true;
+        }
+    }
     
     public function handle_delete(){
         
@@ -377,6 +472,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
         add_submenu_page('custom-user-profile', __('New Subscription'), __('New Subscription'), 'activate_plugins', 'smash_subscription_form', array($this, 'render_crud_view'));
        //  add_submenu_page('profile.php','User Subscription', __('User Subscription'), 'read','user_subscription_page', array($this, 'render_crud_view'));
          add_users_page( "User Subscription Page","User Subscription",'read','user_subscription', array($this, 'render_subscriber_subscription_crud'));
+         add_users_page( "User Subscription List","User Subscription List",'read','user_subscription_list', array($this, 'render_subscriptions'));
          
     }
       public function initialize_subscription_if_id(array $default_subscriber) {

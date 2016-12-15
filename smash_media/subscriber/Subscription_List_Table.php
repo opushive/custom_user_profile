@@ -15,6 +15,7 @@ if (!class_exists('WP_List_Table')) {
 }
 
 class Subscription_List_Table extends WP_List_Table {
+    public $isSubscriber = false;
     //put your code here
     function __construct() {
         global $status, $page;
@@ -30,7 +31,14 @@ class Subscription_List_Table extends WP_List_Table {
     }
     
     function column_subscription_Id($item) {
-       
+       if($this->$isSubscriber){
+       $actions = array(
+            'edit' => sprintf('<a href="#">%s</a>', __('Edit')),
+            'delete' => sprintf('<a href="#">%s</a>', __('Delete'))
+               
+        );  
+           return sprintf('%s %s', '<em>' . $item['subscription_Id'] . '</em>', $this->row_actions($actions));
+       }
         $actions = array(
             'edit' => sprintf('<a href="?page=smash_subscription_form&subscription_Id=%s">%s</a>', $item['subscription_Id'], __('Edit')),
             'delete' => sprintf('<a href="?page=%s&action=delete&subscription_Id=%s">%s</a>', 
@@ -53,7 +61,7 @@ class Subscription_List_Table extends WP_List_Table {
             return "-";
         }
        
-      return '<em>' . $user->user_email . '</em>';   
+      return '<em>' . $user->display_name . '</em>';   
     }
     function column_category_Id($item) {
         if(!$item['category_Id']){
@@ -103,7 +111,12 @@ class Subscription_List_Table extends WP_List_Table {
        
     }
     function get_Subscription(){
-        
+        $user = wp_get_current_user();
+       
+         if ( in_array( 'subscriber', (array) $user->roles ) ) {
+           $isSubscriber = true; 
+         return  \custom_profile\Subscription::_get(NULL,   "wp_user_Id = ".$user->ID."  ORDER BY author_Id,category_Id DESC",  \custom_profile\Subscription::ARRAY_A);
+        }
         $all_susbscriptions =  \custom_profile\Subscription::_get(NULL,   " 1 ORDER BY author_Id,category_Id DESC",  \custom_profile\Subscription::ARRAY_A);
       
        return $all_susbscriptions;

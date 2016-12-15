@@ -29,9 +29,26 @@
 	 * practising this, we should strive to set a better example in our own work.
 	 */
  $(document).ready(function () {
+     var previousSelecions = [];
       function reverseBase64AndParseJson(_val) {
             return  JSON.parse(atob(_val));
         }
+        function evaluateCategoryAuthorString(_authorCategories){
+            var list = "";
+            $.each(_authorCategories,function(_index){
+                if(previousSelecions.indexOf(_authorCategories[_index]) !== -1) {
+                    return false;
+                }
+           var authorCategoryParts = _authorCategories[_index].split("|");
+           previousSelecions.push(_authorCategories[_index]);
+           list += '<option value="'+_authorCategories[_index]+'" selected>'+authorCategoryParts[2]+'</option>';
+         //  $("#selected-categories").ht
+        });
+        $("#selected-categories").append(list);
+        $("#selected-categories").select2({
+            tags: true
+        })
+       }
       $("#author_Id").change(function(){
         var authorId =  $(this).val();
         if(!authorId){
@@ -68,12 +85,40 @@
            var authorObject = reverseBase64AndParseJson($("#subscriber_author_Id option:selected").attr("attr"));
            var list = "";
           if(authorObject.categories.length == 0){
+              $("#authors_categories").html("No categories avaialable for selected author");
               return;
           }
           $.each(authorObject.categories,function(_index){
-             list += "<option value='"+authorObject.author.ID+"'>"+authorObject.categories[_index].name+"</option>"; 
+              console.log(authorObject.categories);
+                console.log(authorObject.categories[_index]);
+                console.log(authorObject.categories[_index]);
+                console.log(authorObject.categories[_index].name);
+             list += "<input type='checkbox'  value='"+authorObject.author.ID+"|"+ authorObject.categories[_index].cat_ID + "|"+ authorObject.author.data.display_name+"["+
+                 authorObject.categories[_index].name +"]'>"+authorObject.author.data.display_name+"["+
+                 authorObject.categories[_index].name    
+                      +"]&nbsp;&nbsp;&nbsp;"; 
           });
-          $("#authors categories").html(list);
+          if(list != ""){
+              list += "<button type='button' id='subscribe-btn'>Subscribe to categories selected</button>";
+          }
+          $("#author-categories-container").removeClass("hidden").fadeIn('slow',function(){
+              $("#authors_categories").html(list);  
+          });
+          
+          $(document).on("click","#subscribe-btn",function(e){
+               e.preventDefault();
+            var allInputs =  $("#author-categories-container input:checked"); 
+            var allValues = [];
+            $(allInputs).each(function(_index){
+               console.log($(allInputs[_index]).val()) ;
+               allValues.push($(allInputs[_index]).val());
+            });
+            
+           evaluateCategoryAuthorString(allValues);
+           e.stopPropagation();
+          });
+          
+        
            
 //            $.each(event, function (currIndex) {
 //                var newEventObject = {name: eventName, paramObject: event[currIndex], paramName: _.keys(event[currIndex])[0]}; 
@@ -88,9 +133,22 @@
 //            newDivElement += "<div class='col-sm-2'><button type='button' containerClassName='" + rowClass + "' class='btn field-remove-btn btn-small btn-danger'>&nbsp; - &nbsp;</button></div>";
 //            newDivElement += "</div>"; 
 //           });
-//            $("#appended_event_parameters").html(newDivElement).hide().fadeIn("slow");
+//            $("#appended_evenservice-tokenizert_parameters").html(newDivElement).hide().fadeIn("slow");
            
          });
+         
+         $(".events").select2({
+            tags:true,
+            tokenSeparators: [',', ' '],
+             placeholder: "",
+             allowClear: true
+           });
+           $(".selected_categories").select2({
+            tags:true,
+            tokenSeparators: [',', ' '],
+             placeholder: "",
+             allowClear: true
+           });
  });
    
 

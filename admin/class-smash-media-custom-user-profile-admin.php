@@ -72,8 +72,9 @@ class Smash_Media_Custom_User_Profile_Admin {
 		 * between the defined hooks and the functions defined in this
 		 * class.
 		 */
-
+https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/smash-media-custom-user-profile-admin.css', array(), $this->version, 'all' );
+		wp_enqueue_style( $this->plugin_name,"https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css", array(), $this->version, 'all' );
 
 	}
 
@@ -97,6 +98,7 @@ class Smash_Media_Custom_User_Profile_Admin {
 		 */
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/smash-media-custom-user-profile-admin.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name, "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js", array( 'jquery' ), $this->version, false );
 
 	}
        public function create_top_level_menu() {
