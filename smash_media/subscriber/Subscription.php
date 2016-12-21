@@ -65,6 +65,7 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
     }
     
     public static function render_subscriptions(){
+        
        $subscription = new \Subscription_List_Table();
 
         if ('delete' ===  $subscription->current_action()) {

@@ -31,7 +31,7 @@ class Subscription_List_Table extends WP_List_Table {
     }
     
     function column_subscription_Id($item) {
-       if($this->$isSubscriber){
+       if($this->isSubscriber){
        $actions = array(
             'edit' => sprintf('<a href="#">%s</a>', __('Edit')),
             'delete' => sprintf('<a href="#">%s</a>', __('Delete'))
