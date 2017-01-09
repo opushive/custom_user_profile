@@ -55,8 +55,15 @@ class Smash_Media_Custom_User_Profile_Public {
 	}
         public function add_hooks($_parent) {
               $this->_parent = $_parent;
-             
+              
+               $_parent->add_action('wp_head',$this,'my_custom_js');   
           }
+          function my_custom_js() {
+    echo '<script type="text/javascript" src="'.plugin_dir_url( __FILE__ ) . 'js/vue.min.js"></script>';
+}
+
+// Add hook for front-end <head></head>
+
 	/**
 	 * Register the stylesheets for the public-facing side of the site.
 	 *
@@ -75,7 +82,8 @@ class Smash_Media_Custom_User_Profile_Public {
 		 * between the defined hooks and the functions defined in this
 		 * class.
 		 */
-
+                wp_enqueue_style('vexcss', plugin_dir_url( __FILE__ ) . 'css/vex.css', array(), $this->version, 'all' );
+                wp_enqueue_style('vexcsstheme', plugin_dir_url( __FILE__ ) . 'css/vex-theme-os.css', array(), $this->version, 'all' );
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/smash-media-custom-user-profile-public.css', array(), $this->version, 'all' );
 
 	}
@@ -85,7 +93,7 @@ class Smash_Media_Custom_User_Profile_Public {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_scripts(){
 
 		/**
 		 * This function is provided for demonstration purposes only.
@@ -98,8 +106,9 @@ class Smash_Media_Custom_User_Profile_Public {
 		 * between the defined hooks and the functions defined in this
 		 * class.
 		 */
-
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/smash-media-custom-user-profile-public.js', array( 'jquery' ), $this->version, false );
+                wp_enqueue_script('vex', plugin_dir_url( __FILE__ ) . 'js/vue.combined.min.js',array(), $this->version, false);
+            
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/smash-media-custom-user-profile-public.js', array( 'jquery','vex'), $this->version, false );
 
 	}
         
@@ -140,14 +149,14 @@ class Smash_Media_Custom_User_Profile_Public {
         }
         
         public function getUserAuthorSubscriptions(){
-            $html = "";
+            $html = "<div id='subscription-container'>";
             $curentUser = wp_get_current_user();
             if(!$curentUser){
                 return false;
             }
            $all_subscriptions =  \custom_profile\Subscription::_get(null,"wp_user_Id = ".$curentUser->ID ." AND author_Id != 0");
           if(empty($all_subscriptions)){
-             return "<h6>You do not have subscription yet</h6>";
+             return "<div id='subscription-container'><h6>You do not have subscription yet</h6></div>";
           }
            if(!Utilities::isValidDatabaseReturn($all_subscriptions)){
                return false;
@@ -194,7 +203,7 @@ class Smash_Media_Custom_User_Profile_Public {
           
              
                   $tag_name = "AUTHOR";
-                  $tag_title = $author_name;
+              
              
              
            
@@ -211,7 +220,7 @@ class Smash_Media_Custom_User_Profile_Public {
                        array_push($all_authors,$currSubscription->author_Id);
       
            }
-           return $html;
+           return $html."</div>";
         }
         
         public function getTopAuthors(){
@@ -251,12 +260,19 @@ class Smash_Media_Custom_User_Profile_Public {
         );
        
        $all_author_post = get_posts($args);
-                 
+          $thumbnails  = array();
+                foreach ($all_author_post as $post) {
+                   if (has_post_thumbnail( $post->ID )){
+                  $thumbnails [] = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID) )[0];  
+                }else{
+                    $thumbnails [] = 0; 
+                } 
+                }         
                  
                  $html .= '<div class="owl-item" style="width: 285px; margin-right: 0px;"><div data-current-author="'. $thisAuthor->ID .
-                         '" data-current-user="'.$current_user->ID .'" data-author-posts="'.base64_encode(json_encode($all_author_post)).'" class="activate-author-posts item news-post standard-post"><div class="post-gallery"><div class="thumb-wrap" data-current-author="'. $thisAuthor->ID .'" data-current-user="'.$current_user->ID .'" class="activate-author-posts" data-author-posts="'.base64_encode(json_encode($all_author_post)).'"><img width="150"  height="150" src="'.$thisAuthorAvatar .'" class="attachment-thumbnail size-thumbnail wp-post-image" alt=""></div></div><div class="post-content">'.
+                         '" data-current-user="'.$current_user->ID .'" data-thumbnails ="'.base64_encode(json_encode( $thumbnails)).'" data-author-posts="'.base64_encode(json_encode($all_author_post)).'" class="activate-author-posts item news-post standard-post"><div class="post-gallery"><div class="thumb-wrap" data-current-author="'. $thisAuthor->ID .'" data-current-user="'.$current_user->ID .'" class="activate-author-posts" data-author-posts="'.base64_encode(json_encode($all_author_post)).'"><img width="150"  height="150" src="'.$thisAuthorAvatar .'" class="attachment-thumbnail size-thumbnail wp-post-image" alt=""></div></div><div class="post-content">'.
                         '<h2><a href="#" class="activate-author-posts" data-current-author="'. $thisAuthor->ID .
-                         '"  data-current-user="'.$current_user->ID .'" data-author-posts="'.base64_encode(json_encode($all_author_post)).'">'.
+                         '"  data-current-user="'.$current_user->ID .'" data-thumbnails ="'.base64_encode(json_encode( $thumbnails)).'"  data-author-posts="'.base64_encode(json_encode($all_author_post)).'">'.
                          $thisAuthor->first_name . " " . $thisAuthor->last_name .'</a></h2></div></div></div>';
              
             };
@@ -278,17 +294,26 @@ class Smash_Media_Custom_User_Profile_Public {
                 'category'         => $thisCategory->term_id,
                 'post_status'      => 'publish'
                 );
-                $posts_array = get_posts( $args );  
+                $posts_array = get_posts( $args ); 
+                $thumbnails  = array();
+                foreach ($posts_array as $post) {
+                   if (has_post_thumbnail( $post->ID )){
+                  $thumbnails [] = wp_get_attachment_image_src( get_post_thumbnail_id( $post->ID) )[0];  
+                }else{
+                    $thumbnails [] = 0; 
+                } 
+                }
+                
                
                
-               
-               $html .= '<div class="news-post image-post default-size">';
-            $html .= '<div class="thumb-wrap" class="activate-category" data-current-user="' . $current_user->ID . '"';
-            $html .= ' data-category-posts="' . base64_encode(json_encode($posts_array)) . '">';
+               $html .= '<div data-active-category="'.$thisCategory->term_id.'" class="news-post activate-category image-post default-size" data-current-user="' . $current_user->ID . '"';
+            $html .= ' data-thumbnails ="'.base64_encode(json_encode( $thumbnails)).'"   data-category-posts="' . base64_encode(json_encode($posts_array)) . '">';
+            $html .= '<div  data-active-category="'.$thisCategory->term_id.'" class="thumb-wrap activate-category" data-current-user="' . $current_user->ID . '"';
+            $html .= ' data-thumbnails ="'.base64_encode(json_encode( $thumbnails)).'"  data-category-posts="' . base64_encode(json_encode($posts_array)) . '">';
             $html .= '<img src="' . $category_image . '" alt="' . $thisCategory->name . '"></div><div class="hover-box"><div class="inner-hover">';
             $html .= '<a class="category-post business" href="#" >' . strtoupper($thisCategory->name) . '</a>';
 
-            $html .= '<h2><a href="#" class="thumb-wrap" class="activate-category" data-current-user="' . $current_user->ID . '"';
+            $html .= '<h2><a href="#" class="thumb-wrap activate-category" data-current-user="' . $current_user->ID . '"';
             $html .= ' data-category-posts="' . base64_encode(json_encode($posts_array)) . '">' . strtoupper($thisCategory->name) . '</a></h2></div></div></div>';
         }
            return $html;

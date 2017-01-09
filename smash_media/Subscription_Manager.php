@@ -16,8 +16,8 @@ class Subscription_Manager {
     
     public function addHooks($_parent) {
       // $_parent->add_action( 'admin_menu',$this,'add_menu_item'); 
-      $_parent->add_action( 'wp_ajax_subscribe_user_ajax',$this,'subscribe_user_ajax'); 
-      $_parent->add_action( 'wp_ajax_unsubscribe_user_ajax',$this,'unsubscribe_user_ajax'); 
+     // $_parent->add_action( 'wp_ajax_subscribe_user_ajax',$this,'subscribe_user_ajax'); 
+     // $_parent->add_action( 'wp_ajax_unsubscribe_user_ajax',$this,'unsubscribe_user_ajax'); 
     }
     
     public function subscribe_user_ajax(){

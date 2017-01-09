@@ -571,14 +571,40 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
         
     }
    public function subscribe_user_ajax(){
-       if(isset($_REQUEST['subscribe_user'])){
-           
+       if(isset($_REQUEST['user'])){
+           $wp_user_id = $_REQUEST['user'];
+           $wp_user_id = 5;
+           $author = $_REQUEST['author'];
+           $category = $_REQUEST['category'];
+            $subscriber  = \smash\Subscriber::_get(NULL,'wp_user_Id = '.$wp_user_id);
+            if(!\Utilities::isValidDatabaseReturn($subscriber)){
+                
+              return json_encode(array('status'=>false,'message'=>'You are not a subscriber'));
+            }
+            $susbcription_exist =  $all_susbscriptions =  Subscription::_get(NULL,'wp_user_Id = '.$wp_user_id .
+                    ' AND author_Id = '.$author .' AND category_Id = '.$category);
+            if(!\Utilities::isValidDatabaseReturn($susbcription_exist)){
+                
+              return json_encode(array('status'=>false,'message'=>'You are already subscribed'));
+            }
+            //create subscription
+            $item = array();
+         $item['subscriber_Id'] = $subscriber[0]->subscriber_Id;
+         $item['category_Id'] = $category;
+         $item['author_Id'] = $author;
+         $item['wp_user_Id'] = $wp_user_id;
+         
+          
+         $createSubscription = new Subscription(NULL,NULL);
+         $result = $createSubscription->create($item);
+         return json_encode(array('status'=>true, $this->getUserSubscriptions($wp_user_id)));
+         
        }
    }
    
    public function unsubscribe_user_ajax(){
      if(isset($_REQUEST['unsubscribe_user'])){
-           
+       
        }  
    }
    
@@ -699,5 +725,39 @@ class Subscription  extends \smash\ADb implements \smash\IWp{
    
    }
    
+   public function getUserSubscriptions($_userId){
+       $userSubscriptions = Subscription::_get(NULL,'wp_user_Id = '.$_userId);
+       $allSubscriptions = array();
+       
+       
+       foreach ($userSubscriptions as $subscription) {
+            $subscriptionFormat = array('id' => '', 'tagname' => '', 'name' => '', 'image' => '', 'type' => '', 'subscription_Id');
+            if ($subscription->author_Id != 0) {
+
+                $subscriptionFormat['id'] = $subscription->author_Id;
+                $currAuthor = get_user_by('ID', $subscription->author_Id);
+                $subscriptionFormat['name'] = $currAuthor->first_name . " " . $currAuthor->last_name;
+                $subscriptionFormat['image'] = self::get_metronet_image_url($subscription->author_Id);
+                $subscriptionFormat['tagname'] = "AUTHOR";
+                $subscriptionFormat['subscription_Id'] = $subscription->subscription_Id;
+                $allSubscriptions[] = $subscriptionFormat;
+            }
+            if ($subscription->author_Id == 0 && $subscription->category_Id != 0) {
+                $category = get_category($subscription->category_Id);
+
+                $subscriptionFormat['id'] = $subscription->category_Id;
+                $subscriptionFormat['name'] = $category->name;
+                $subscriptionFormat['image'] =  z_taxonomy_image_url($category ->term_id);
+                $subscriptionFormat['tagname'] = "CATEGORY";
+                $subscriptionFormat['subscription_Id'] = $subscription->subscription_Id;
+                $allSubscriptions[] = $subscriptionFormat;
+            }
+        }
+        return $allSubscriptions;
+    }
+    public static function  get_metronet_image_url($_user_Id){
+            $found_url =  wp_get_attachment_url(get_user_meta($_user_Id,'wp_metronet_image_id',true));
+            return $found_url ? $found_url : get_avatar_url($_user_Id);
+        }
 
 }
